@@ -217,9 +217,46 @@ sudo apt install openssh-server -y
 
 ## Inventory File Setup
 
+### Configuring SSH Key in ansible.cfg
+
+If you prefer not to specify the SSH key location in your inventory file, you can set it globally in an Ansible configuration file (ansible.cfg):
+
+```ini
+[defaults]
+inventory = inventory.ini
+private_key_file = /home/youradmin/.ssh/id_rsa
+```
+
 ### Create an Inventory File (e.g., inventory.ini):
 
 ```ini
 [linux_hosts]
 node1 ansible_host=192.168.1.101 ansible_user=yourusername
+```
+
+### Test Connectivity with the Ping Module
+
+```bash
+ansible linux_hosts -i inventory.ini -m ping
+```
+
+Must return:
+
+```golang
+node1 | SUCCESS => {
+    "changed": false,
+    "ping": "pong"
+}
+```
+
+### Verify SSH Key Usage via Ansible
+
+```bash
+ansible linux_hosts -i inventory.ini -m ping -vvv
+```
+
+### Testing Your Setup with an Ad-hoc Command
+
+```bash
+ansible linux_hosts -i inventory.ini -m command -a "uname -a"
 ```
