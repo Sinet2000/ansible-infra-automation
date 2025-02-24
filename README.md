@@ -31,7 +31,7 @@ Automated infrastructure provisioning &amp; management with Ansible. Secure, sca
 - Installing Python-based CLI tools (e.g., `ansible`, `black`, `poetry`).
 - Keeping the global Python environment clean.
 
-## **How to Install Ansible on Windows WSL**
+## **Windows WSL Control Node Setup**
 
 ### 1. Configure WSL
 
@@ -196,4 +196,30 @@ atlanta:
     host2:
       http_port: 303
       maxRequestsPerChild: 909
+```
+
+## **Managed node Setup**
+
+Your managed nodes (the two Linux machines you wish to control) must meet a few basic requirements:
+
+- **Python Installed**: Most modern Linux distributions have Python 3 pre-installed. If not, install it.
+- **SSH Server Running**: Ansible uses SSH for communication.
+- **Non-root User with sudo**: For security, create a dedicated user (or use an existing one) with sudo privileges.
+- **Firewall Configuration**: Ensure SSH (port 22) is allowed.
+
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install python3 -y           # Usually pre-installed
+sudo apt install openssh-server -y
+```
+
+### **The managed linux machine should have passwordlress SSH configured**
+
+## Inventory File Setup
+
+### Create an Inventory File (e.g., inventory.ini):
+
+```ini
+[linux_hosts]
+node1 ansible_host=192.168.1.101 ansible_user=yourusername
 ```
