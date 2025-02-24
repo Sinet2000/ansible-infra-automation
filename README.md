@@ -260,3 +260,60 @@ ansible linux_hosts -i inventory.ini -m ping -vvv
 ```bash
 ansible linux_hosts -i inventory.ini -m command -a "uname -a"
 ```
+
+---
+
+## Creating and Running an Ansible Playbook
+
+### What Is an Ansible Playbook?
+
+An Ansible playbook is a YAML-formatted file that describes the desired state of your systems and the steps (tasks) required to reach that state. In a playbook, you define:
+
+- **Hosts**: The target machines (as defined in your inventory) on which tasks will run.
+- **Tasks**: Individual steps that can include running commands, cloning repositories, managing packages, configuring services, and more.
+- **Modules**: Pre-built tools (like git, docker_container, etc.) that perform specific actions.
+- **Variables**: Data that can be reused throughout the playbook.
+- **Handlers**: Special tasks that are triggered by notifications from other tasks (for example, restarting a service when a configuration file changes).
+
+### Sample Playbook: Testing a Public Repo Clone and Docker Image
+
+Create a file named `deploy_test.yml` with the following content
+
+### Explanation of the Playbook Commands
+
+**Play Definition:**
+The play begins with a name and specifies the target hosts (group managed from your inventory).
+The become: yes allows privilege escalation (running commands as root), and gather_facts: yes collects system details from the managed node.
+
+**Variables:**
+Variables like repo_url, repo_dest, docker_image, and container_name are defined at the beginning. These variables make it easy to update the configuration for your environment.
+
+**Task: Ensure Destination Directory Exists**
+Uses the file module to create the directory if it doesn’t already exist. This prevents the git task from failing if the directory is missing.
+
+**Task: Clone or Update the Public Repository**
+The git module clones the repository from GitHub to the destination directory. It registers the result (stored in git_result) which can be used for debugging or notifying handlers.
+
+**Task: Display Repository Clone Result**
+Uses the debug module to print the output from the git task. This helps you verify that the repository was cloned or updated successfully.
+
+**Task: Pull the Docker Image**
+The docker_image module pulls the “hello-world” image from Docker Hub. This confirms that Docker is installed and working on your managed node.
+
+**Task: Run the Docker Container**
+The docker_container module starts a container from the pulled image. Since the hello-world container is designed to exit immediately after running, it is then stopped automatically.
+
+**Task: Wait for the Container to Finish Running**
+This ensures that the playbook waits until the container has completed its run before moving on.
+
+**Task: Retrieve and Display Docker Container Logs**
+The command module is used to run docker logs to fetch the output from the container. The logs are then displayed using the debug module to confirm that the Docker image ran as expected.
+
+**Handler: Restart Container if Repository Updated**
+Though not actively used in this example (you’d need to add a notification to the git task), this handler illustrates how you might restart a container if the code in your repository changes.
+
+### Run the Playbook
+
+```bash
+ansible-playbook -i inventory.ini deploy_test.yml -vvv
+```

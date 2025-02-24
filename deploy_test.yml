@@ -1,0 +1,75 @@
+---
+- name: Test Public Repo Clone and Docker Image Test
+  hosts: linux_hosts
+  become: yes
+  gather_facts: yes
+
+  vars:
+    # URL of the public GitHub repository to clone
+    repo_url: "https://github.com/ansible/ansible-examples.git"
+    # Destination directory for the repository
+    repo_dest: "/home/ansibleuser/docker-nginx"
+    # Docker image to test (using a public image from Docker Hub)
+    docker_image: "hello-world"
+    # Name for the Docker container that will run the image
+    container_name: "hello_world_test"
+
+  tasks:
+    - name: Ensure the destination directory exists
+      file:
+        path: "{{ repo_dest }}"
+        state: directory
+      # This guarantees that the target directory exists before cloning
+
+    - name: Clone or update the public repository
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ repo_dest }}"
+        version: master
+      register: git_result
+      # The git module clones the repo. If the repo is already present, it will update it.
+
+    - name: Display repository clone result
+      debug:
+        var: git_result
+      # Use debug to display the outcome of the git task for verification.
+
+    - name: Pull the Docker image
+      docker_image:
+        name: "{{ docker_image }}"
+        source: pull
+      # This task pulls the latest "hello-world" Docker image from Docker Hub.
+
+    - name: Run the Docker container to test the image
+      docker_container:
+        name: "{{ container_name }}"
+        image: "{{ docker_image }}"
+        state: started
+        restart_policy: no
+      register: docker_result
+      # Runs the container; the hello-world container will exit after displaying a message.
+
+    - name: Wait for the container to finish running
+      docker_container:
+        name: "{{ container_name }}"
+        state: stopped
+      when: docker_result is defined
+      # Waits until the container stops running (hello-world exits immediately).
+
+    - name: Retrieve Docker container logs
+      command: docker logs {{ container_name }}
+      register: container_logs
+      changed_when: false
+      # Runs a command to capture the container's logs for verification.
+
+    - name: Display container logs
+      debug:
+        var: container_logs.stdout
+      # Outputs the logs to confirm the Docker image worked correctly.
+
+  handlers:
+    - name: Restart container if repository is updated
+      docker_container:
+        name: "{{ container_name }}"
+        state: restarted
+      # This handler could be notified by the git task (if changes are made) to restart the container.
